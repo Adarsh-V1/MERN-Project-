@@ -14,16 +14,17 @@ vi.mock("../../../src/utils/logger.js", () => ({
 
 import mongoose from "mongoose";
 import { DB_NAME } from "../../../src/constant.js";
-import connectDB from "../../../src/db/db_index.js";
 import { logger } from "../../../src/utils/logger.js";
 
 beforeEach(() => {
+  vi.resetModules();
   vi.clearAllMocks();
   process.env.MONGODB_URI = "mongodb://localhost:27017";
 });
 
 describe("connectDB", () => {
   it("connects to the configured database and logs safe metadata", async () => {
+    const { default: connectDB } = await import("../../../src/db/db_index.js");
     const connectionResponse = {
       connection: {
         host: "localhost",
@@ -44,6 +45,7 @@ describe("connectDB", () => {
   });
 
   it("propagates connection failures", async () => {
+    const { default: connectDB } = await import("../../../src/db/db_index.js");
     mongoose.connect.mockRejectedValue(new Error("connection failed"));
 
     await expect(connectDB()).rejects.toThrow("connection failed");

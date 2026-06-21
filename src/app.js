@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser'
 import multer from 'multer'
 import { logger } from './utils/logger.js'
 import { ApiError } from './utils/ApiError.js'
+import { ensureDatabaseConnection } from './middlewares/database.middleware.js'
 
 
 const app = express()
@@ -19,7 +20,8 @@ app.use(express.json({limit:"20kb"}))
 app.use(express.urlencoded({limit:'20kb'}))
 app.use(express.static("public"))
 
-app.use(cookieParser())   
+app.use(cookieParser())
+app.use(ensureDatabaseConnection)
 
 
 

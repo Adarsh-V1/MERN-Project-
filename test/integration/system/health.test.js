@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import request from "supertest";
 
 import app from "../../../src/app.js";
+import { useTestDatabase } from "../../helpers/database.js";
+
+useTestDatabase();
 
 describe("GET /api/v1/users/okay", () => {
   it("returns a successful health response", async () => {
