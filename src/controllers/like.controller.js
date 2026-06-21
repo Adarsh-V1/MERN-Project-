@@ -7,6 +7,10 @@ import { Comment } from "../models/comment.model.js";
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+  if (!(await Video.exists({ _id: videoId }))) {
+    throw new ApiError(404, "Video not found");
+  }
+
   const toggleLike = await Like.findOne({
     video: videoId,
     likedBy: req.user._id,
@@ -50,6 +54,10 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
+  if (!(await Comment.exists({ _id: commentId }))) {
+    throw new ApiError(404, "Comment not found");
+  }
+
   const findLike = await Like.findOne({
     comment: commentId,
     likedBy: req.user._id,

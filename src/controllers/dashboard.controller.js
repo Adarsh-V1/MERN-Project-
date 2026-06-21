@@ -5,6 +5,7 @@ import { Video } from "../models/video.model.js";
 import { Playlist } from "../models/playlist.model.js";
 import { HotTake } from "../models/hotTake.model.js";
 import { Subscription } from "../models/subscription.model.js";
+import { Comment } from "../models/comment.model.js";
 
 const getChannelStats = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -13,13 +14,12 @@ const getChannelStats = asyncHandler(async (req, res) => {
   const totalVideos = videos.length;
   const totalViews = videos.reduce((sum, v) => sum + (v.views || 0), 0);
   const totalLikes = videos.reduce(
-    (sum, v) => sum + (v.likes ? v.likes.length : 0),
+    (sum, v) => sum + (v.likesCount || 0),
     0
   );
-  const totalComments = videos.reduce(
-    (sum, v) => sum + (v.comments ? v.comments.length : 0),
-    0
-  );
+  const totalComments = await Comment.countDocuments({
+    video: { $in: videos.map((video) => video._id) },
+  });
 
   const playlists = await Playlist.find({ owner: userId });
   const totalPlaylists = playlists.length;
@@ -38,7 +38,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
 
   const mostLikedVideo = videos.reduce(
     (max, v) =>
-      (v.likes?.length || 0) > (max?.likes?.length || 0) ? v : max,
+      (v.likesCount || 0) > (max?.likesCount || 0) ? v : max,
     null
   );
 
@@ -71,7 +71,10 @@ const getChannelStats = asyncHandler(async (req, res) => {
 });
 
 const getChannelVideos = asyncHandler(async (req, res) => {
-  const userVideos = await Video.find({ owner: req.user._id }).populate("owner");
+  const userVideos = await Video.find({ owner: req.user._id }).populate(
+    "owner",
+    "-password -refreshToken"
+  );
   if (userVideos.length === 0) {
     return res
       .status(200)
@@ -91,7 +94,10 @@ const getChannelVideos = asyncHandler(async (req, res) => {
 
 const getChannelTakes = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const hotTakes = await HotTake.find({ owner: userId }).populate("owner");
+  const hotTakes = await HotTake.find({ owner: userId }).populate(
+    "owner",
+    "-password -refreshToken"
+  );
   return res
     .status(200)
     .json(

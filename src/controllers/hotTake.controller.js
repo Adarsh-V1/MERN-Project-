@@ -5,8 +5,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 const createTakes = asyncHandler(async (req, res) => {
   const { content } = req.body;
-  if (content.trim() === "") {
-    throw new ApiError(404, "No HotTake content was provided!!");
+  if (!content?.trim()) {
+    throw new ApiError(400, "No HotTake content was provided!!");
   }
   const hotTake = await HotTake.create({
     content,
@@ -18,12 +18,15 @@ const createTakes = asyncHandler(async (req, res) => {
   }
 
   return res
-    .status(200)
-    .json(new ApiResponse(200, hotTake, "HotTake was created Successfully "));
+    .status(201)
+    .json(new ApiResponse(201, hotTake, "HotTake was created Successfully "));
 });
 
 const getAllTakes = asyncHandler(async (req, res) => {
-  const allHotTakes = await HotTake.find().populate("owner");
+  const allHotTakes = await HotTake.find().populate(
+    "owner",
+    "-password -refreshToken"
+  );
   if (!allHotTakes) {
     throw new ApiError(500, "No HotTakes found!");
   }
@@ -34,7 +37,10 @@ const getAllTakes = asyncHandler(async (req, res) => {
 
 const getUserTakes = asyncHandler(async (req, res) => {
   const { userId } = req.params;
-  const userHotTakes = await HotTake.find({ owner: userId }).populate("owner");
+  const userHotTakes = await HotTake.find({ owner: userId }).populate(
+    "owner",
+    "-password -refreshToken"
+  );
   if (!userHotTakes) {
     throw new ApiError(500, "No HotTake found for this user! ");
   }
@@ -49,8 +55,17 @@ const updateTakes = asyncHandler(async (req, res) => {
   const { takeId } = req.params;
   const { newContent } = req.body;
   if (!newContent) {
-    throw new ApiError(500, "No updated HotTake was provided");
+    throw new ApiError(400, "No updated HotTake was provided");
   }
+
+  const existingTake = await HotTake.findById(takeId);
+  if (!existingTake) {
+    throw new ApiError(404, "No HotTake was found ");
+  }
+  if (existingTake.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You can only update your own HotTakes");
+  }
+
   const userHotTake = await HotTake.findByIdAndUpdate(
     takeId,
     {
@@ -59,7 +74,7 @@ const updateTakes = asyncHandler(async (req, res) => {
       },
     },
     { new: true }
-  ).populate("owner");
+  ).populate("owner", "-password -refreshToken");
   if (!userHotTake) {
     throw new ApiError(500, "No HotTake was found ");
   }
@@ -70,7 +85,14 @@ const updateTakes = asyncHandler(async (req, res) => {
 
 const deleteTakes = asyncHandler(async (req, res) => {
   const { takeId } = req.params;
-  await HotTake.findByIdAndDelete(takeId);
+  const hotTake = await HotTake.findById(takeId);
+  if (!hotTake) {
+    throw new ApiError(404, "No HotTake was found ");
+  }
+  if (hotTake.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You can only delete your own HotTakes");
+  }
+  await hotTake.deleteOne();
 
   return res
     .status(200)

@@ -6,6 +6,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import { logger } from "../utils/logger.js";
 
 const okay = asyncHandler(async (req, res) => {
   
@@ -28,55 +29,68 @@ const generateAccessRefreshToken = async (userId) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-  // console.log("req files ", req.files);
   const { fullName, username, email, password } = req.body;
+  const providedFullName =
+    typeof fullName === "string" ? fullName.trim() : "";
+  const providedUsername =
+    typeof username === "string" ? username.trim() : "";
+  const normalizedEmail = typeof email === "string" ? email.trim() : "";
+  const providedPassword = typeof password === "string" ? password : "";
 
   if (
-    [fullName, email, username, password].some((field) => {
-      return field?.trim() === "";
-    })
+    (!providedFullName && !providedUsername) ||
+    !normalizedEmail ||
+    !providedPassword.trim()
   ) {
-    throw new ApiError(400, "All Fields are Required");
+    throw new ApiError(
+      400,
+      "Provide either fullName or username; email and password are required"
+    );
   }
 
-  if (!validator.isEmail(email)) {
+  const normalizedFullName = providedFullName || providedUsername;
+  const normalizedUsername = (
+    providedUsername || providedFullName.replace(/\s+/g, "_")
+  ).toLowerCase();
+
+  if (!validator.isEmail(normalizedEmail)) {
     throw new ApiError(400, "Invalid email format!");
   }
 
   const existedUser = await User.findOne({
-    $or: [{ email }, { username }],
+    $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
   });
 
   if (existedUser) {
-    if (existedUser.email === email) {
+    if (existedUser.email === normalizedEmail.toLowerCase()) {
       throw new ApiError(409, "Email Already Exists !");
     }
-    if (existedUser.username === username) {
+    if (existedUser.username === normalizedUsername) {
       throw new ApiError(409, "Username is not availble !");
     }
   }
 
   const avatarLocalPath = req.files?.avatar?.[0]?.path;
   const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
-  // console.log(avatarLocalPath);
-  if (!avatarLocalPath) {
-    throw new ApiError(400, "AvatarLocal file is Required!");
-  }
 
-  const avatar = await uploadOnCloudinary(avatarLocalPath);
-  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+  const avatar = avatarLocalPath
+    ? await uploadOnCloudinary(avatarLocalPath)
+    : null;
+  const coverImage = coverImageLocalPath
+    ? await uploadOnCloudinary(coverImageLocalPath)
+    : null;
 
-  if (!avatar) {
-    throw new ApiError(400, "Avatar cloud file is Required!");
+  if (avatarLocalPath && !avatar) {
+    throw new ApiError(400, "Avatar upload failed");
   }
 
   const user = await User.create({
-    fullName,
-    avatar: avatar.url,
+    fullName: normalizedFullName,
+    avatar: avatar?.url || "",
     coverImage: coverImage?.url || "",
-    username: username.toLowerCase(),
-    email,
-    password,
+    username: normalizedUsername,
+    email: normalizedEmail,
+    password: providedPassword,
   });
 
   const createdUser = await User.findById(user._id).select(
@@ -89,17 +103,15 @@ const registerUser = asyncHandler(async (req, res) => {
       "User Wasn't Registered Successfully! Don't worry it's our fault "
     );
   }
-  // console.log(createdUser);
   return res
     .status(201)
-    .json(new ApiResponse(200, createdUser, "User Registered Successfully!"));
+    .json(new ApiResponse(201, createdUser, "User Registered Successfully!"));
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-  // console.log("req.body is : ", req.body);
   const { username, email, password } = req.body;
 
-  if (!(username || email)) {
+  if (!(username || email) || !password) {
     throw new ApiError(400, "All Fields are Required! ");
   }
 
@@ -124,13 +136,6 @@ const loginUser = asyncHandler(async (req, res) => {
   const loggedInUser = await User.findById(user._id).select(
     "-password -refreshToken"
   );
-
-  res.cookie("accessToken", accessToken, {
-    httpOnly: true, // cookie not accessible by JS
-    secure: true, // required because Vercel/Render use HTTPS
-    sameSite: "none", // required for cross-site (different domains)
-    maxAge: 24 * 24 * 60 * 60 * 1000, // optional: 1 day
-  });
 
   const options = {
     httpOnly: true,
@@ -180,7 +185,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     .status(200)
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, "User Logged out Successfully"));
+    .json(new ApiResponse(200, {}, "User Logged out Successfully"));
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
@@ -196,8 +201,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       process.env.REFRESH_TOKEN_SECRET
     );
 
-    console.log(decodedToken);
-
     const user = await User.findById(decodedToken?._id);
 
     if (!user) {
@@ -208,7 +211,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       throw new ApiError(401, "Refresh Token is either Expired or used");
     }
 
-    const { newAccessToken, newRefreshToken } =
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
       await generateAccessRefreshToken(user._id);
 
     const options = {
@@ -281,6 +284,9 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     updateFields.fullName = fullName;
   }
   if (email) {
+    if (!validator.isEmail(email)) {
+      throw new ApiError(400, "Invalid email format!");
+    }
     updateFields.email = email;
   }
 
@@ -290,7 +296,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
       $set: updateFields,
     },
     { new: true }
-  ).select("-password");
+  ).select("-password -refreshToken");
 
   return res
     .status(200)
@@ -307,7 +313,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   // Todo Delete Old Image
   const avatar = await uploadOnCloudinary(avatarLocal);
 
-  if (!avatar.url) {
+  if (!avatar?.url) {
     throw new ApiError(500, "Error while uploading avatar");
   }
 
@@ -315,7 +321,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     req.user?._id,
     { $set: { avatar: avatar.url } },
     { new: true }
-  ).select("-password");
+  ).select("-password -refreshToken");
 
   return res
     .status(200)
@@ -331,7 +337,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
   const coverImage = await uploadOnCloudinary(coverImageLocal);
 
-  if (!coverImage.url) {
+  if (!coverImage?.url) {
     throw new ApiError(500, "Error while uploading cover image");
   }
 
@@ -339,7 +345,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     req.user?._id,
     { $set: { coverImage: coverImage.url } },
     { new: true }
-  ).select("-password");
+  ).select("-password -refreshToken");
 
   return res
     .status(200)
@@ -394,7 +400,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     },
     {
       $project: {
-        fullname: 1,
+        fullName: 1,
         username: 1,
         subscribersCount: 1,
         channelsSubcribedToCount: 1,
@@ -409,7 +415,10 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   if (!channel?.length) {
     throw new ApiError(404, "Channel does not exists");
   }
-  console.log("Channel value is :", channel);
+  logger.debug("Channel profile fetched", {
+    username,
+    resultCount: channel.length,
+  });
 
   return res
     .status(200)
@@ -441,31 +450,34 @@ const getWatchHistory = asyncHandler(async (req, res) => {
               pipeline: [
                 {
                   $project: {
-                    fullname: 1,
+                    fullName: 1,
                     username: 1,
                     avatar: 1,
                   },
                 },
-                {
-                  $addFields: {
-                    owner: {
-                      $first: "$owner",
-                    },
-                  },
-                },
               ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: "$owner",
+              },
             },
           },
         ],
       },
     },
   ]);
+
+  const watchHistory = user[0]?.watchHistory || [];
+
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        user[0].watchHistory,
+        watchHistory,
         "Watch history fetched successfully"
       )
     );

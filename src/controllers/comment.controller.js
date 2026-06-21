@@ -2,6 +2,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Comment } from "../models/comment.model.js";
+import { logger } from "../utils/logger.js";
+import { Video } from "../models/video.model.js";
 
 const getVideoComments = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -9,11 +11,17 @@ const getVideoComments = asyncHandler(async (req, res) => {
   const pageNum = Number(page);
   const limitNum = Number(limit);
 
-  const allComments = await Comment.find({ video: videoId }).populate("owner")
+  const allComments = await Comment.find({ video: videoId }).populate(
+    "owner",
+    "-password -refreshToken"
+  )
     .skip((pageNum - 1) * limitNum)
     .limit(limitNum);
 
-  console.log(allComments);
+  logger.debug("Video comments fetched", {
+    videoId,
+    resultCount: allComments.length,
+  });
   if (!allComments) {
     throw new ApiError("Can't fetch comments");
   }
@@ -28,13 +36,13 @@ const getVideoComments = asyncHandler(async (req, res) => {
 const addComment = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const { content } = req.body;
-  console.log(content);
-  if (content.trim() === "") {
-    throw new ApiError(404, "No comment was Provided");
+  if (!content?.trim()) {
+    throw new ApiError(400, "No comment was Provided");
   }
 
-  if (videoId.trim() === "") {
-    throw new ApiError(404, "No VideoId was Provided");
+  const videoExists = await Video.exists({ _id: videoId });
+  if (!videoExists) {
+    throw new ApiError(404, "No Video was Found");
   }
 
   const addComment = await Comment.create({
@@ -46,7 +54,11 @@ const addComment = asyncHandler(async (req, res) => {
   if (!addComment) {
     throw new ApiError("Comment was not added!");
   }
-  console.log(addComment);
+  logger.info("Comment created", {
+    commentId: addComment._id.toString(),
+    videoId,
+    ownerId: req.user._id.toString(),
+  });
 
   return res
     .status(200)
@@ -56,9 +68,18 @@ const addComment = asyncHandler(async (req, res) => {
 const updateComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
   const { newComment } = req.body;
-  if (newComment.trim() === "") {
-    throw new ApiError("Please provide a comment to update");
+  if (!newComment?.trim()) {
+    throw new ApiError(400, "Please provide a comment to update");
   }
+
+  const comment = await Comment.findById(commentId);
+  if (!comment) {
+    throw new ApiError(404, "Comment wasn't found");
+  }
+  if (comment.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You can only update your own comments");
+  }
+
   const updatedComment = await Comment.findByIdAndUpdate(
     commentId,
     {
@@ -72,7 +93,7 @@ const updateComment = asyncHandler(async (req, res) => {
   );
 
   if (!updatedComment) {
-    throw new ApiError("Comment wasn't updated ");
+    throw new ApiError(500, "Comment wasn't updated ");
   }
   return res
   .status(200)
@@ -83,6 +104,15 @@ const updateComment = asyncHandler(async (req, res) => {
 
 const deleteComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
+
+  const comment = await Comment.findById(commentId);
+  if (!comment) {
+    throw new ApiError(404, "Comment wasn't found");
+  }
+  if (comment.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You can only delete your own comments");
+  }
+
   await Comment.findByIdAndDelete(commentId);
 
   return res

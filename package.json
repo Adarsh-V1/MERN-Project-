@@ -18,12 +18,24 @@
   "license": "ISC",
   "author": "Adarsh",
   "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "test": "NODE_ENV=test vitest run",
+    "test:watch": "NODE_ENV=test vitest",
+    "test:coverage": "NODE_ENV=test vitest run --coverage",
+    "test:unit": "NODE_ENV=test vitest run test/unit",
+    "test:integration": "NODE_ENV=test vitest run test/integration"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "@vitest/coverage-v8": "4.1.9",
+    "mongodb-memory-server": "^11.2.0",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.2.2",
+    "vitest": "^4.1.9"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -37,6 +49,7 @@
     "mongoose-aggregate-paginate-v2": "^1.1.4",
     "multer": "^2.0.2",
     "prettier": "^3.6.2",
-    "validator": "^13.15.15"
+    "validator": "^13.15.15",
+    "winston": "^3.19.0"
   }
 }

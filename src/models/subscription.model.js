@@ -14,4 +14,6 @@ const subscriptionsSchema = new Schema({
 
 },{timestamps :true})
 
+subscriptionsSchema.index({ subscriber: 1, channel: 1 }, { unique: true })
+
 export const Subscription = model("Subscription",subscriptionsSchema)
