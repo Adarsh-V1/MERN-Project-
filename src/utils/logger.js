@@ -32,6 +32,32 @@ const fileFormat = combine(
   json()
 );
 
+const transports = [
+  new winston.transports.Console({
+    format: consoleFormat,
+  }),
+];
+
+// Vercel Functions should log to stdout/stderr. Their deployed application
+// directory is not a suitable place for persistent log files.
+if (!process.env.VERCEL) {
+  transports.push(
+    new winston.transports.File({
+      filename: "logs/error.log",
+      level: "error",
+      format: fileFormat,
+      maxsize: 5_000_000,
+      maxFiles: 5,
+    }),
+    new winston.transports.File({
+      filename: "logs/combined.log",
+      format: fileFormat,
+      maxsize: 5_000_000,
+      maxFiles: 5,
+    })
+  );
+}
+
 const logger = winston.createLogger({
   silent: process.env.NODE_ENV === "test",
   level:
@@ -42,26 +68,7 @@ const logger = winston.createLogger({
     service: "mern-project-api",
   },
 
-  transports: [
-    new winston.transports.Console({
-      format: consoleFormat,
-    }),
-
-    new winston.transports.File({
-      filename: "logs/error.log",
-      level: "error",
-      format: fileFormat,
-      maxsize: 5_000_000,
-      maxFiles: 5,
-    }),
-
-    new winston.transports.File({
-      filename: "logs/combined.log",
-      format: fileFormat,
-      maxsize: 5_000_000,
-      maxFiles: 5,
-    }),
-  ],
+  transports,
 });
 
 export { logger };
