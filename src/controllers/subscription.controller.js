@@ -3,6 +3,7 @@ import { Subscription } from "../models/subscription.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
+import { invalidateChannelCaches } from "../utils/cacheInvalidation.js";
 
 const toggleSubscription = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
@@ -18,6 +19,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
   });
 
   if (alreadySubscribed) {
+    await invalidateChannelCaches(channelId);
     return res
       .status(200)
       .json(new ApiResponse(200, {}, "Unsubscribed Successfully!!"));
@@ -30,6 +32,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
   if (!subscribe) {
     throw new ApiError(500, "Failed to subscribe this channel");
   }
+  await invalidateChannelCaches(channelId);
   return res
     .status(200)
     .json(new ApiResponse(200, subscribe, "channel Subscribed Successfully "));

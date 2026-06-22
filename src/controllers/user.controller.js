@@ -9,7 +9,6 @@ import mongoose from "mongoose";
 import { logger } from "../utils/logger.js";
 
 const okay = asyncHandler(async (req, res) => {
-  
   return res.status(200).json("everything good in backend server");
 });
 
@@ -30,10 +29,8 @@ const generateAccessRefreshToken = async (userId) => {
 
 const registerUser = asyncHandler(async (req, res) => {
   const { fullName, username, email, password } = req.body;
-  const providedFullName =
-    typeof fullName === "string" ? fullName.trim() : "";
-  const providedUsername =
-    typeof username === "string" ? username.trim() : "";
+  const providedFullName = typeof fullName === "string" ? fullName.trim() : "";
+  const providedUsername = typeof username === "string" ? username.trim() : "";
   const normalizedEmail = typeof email === "string" ? email.trim() : "";
   const providedPassword = typeof password === "string" ? password : "";
 
@@ -475,11 +472,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(
-        200,
-        watchHistory,
-        "Watch history fetched successfully"
-      )
+      new ApiResponse(200, watchHistory, "Watch history fetched successfully")
     );
 });
 

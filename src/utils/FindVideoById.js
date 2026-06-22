@@ -10,11 +10,11 @@ async function helperFindVideoId(videoId) {
     "owner",
     "-password -refreshToken"
   );
-  
+
   if (!video) {
     throw new ApiError(400, "No video Exists");
   }
   return video;
 }
 
-export { helperFindVideoId }
+export { helperFindVideoId };

@@ -12,7 +12,9 @@ export function useTestDatabase() {
 
   afterEach(async () => {
     const collections = Object.values(mongoose.connection.collections);
-    await Promise.all(collections.map((collection) => collection.deleteMany({})));
+    await Promise.all(
+      collections.map((collection) => collection.deleteMany({}))
+    );
   });
 
   afterAll(async () => {

@@ -1,14 +1,7 @@
 import winston from "winston";
 
-const {
-  combine,
-  timestamp,
-  errors,
-  splat,
-  json,
-  colorize,
-  printf,
-} = winston.format;
+const { combine, timestamp, errors, splat, json, colorize, printf } =
+  winston.format;
 
 const consoleFormat = combine(
   colorize(),
@@ -17,9 +10,7 @@ const consoleFormat = combine(
   splat(),
   printf(({ timestamp, level, message, stack, service, ...metadata }) => {
     const extra =
-      Object.keys(metadata).length > 0
-        ? ` ${JSON.stringify(metadata)}`
-        : "";
+      Object.keys(metadata).length > 0 ? ` ${JSON.stringify(metadata)}` : "";
 
     return `${timestamp} ${level}: ${stack || message}${extra}`;
   })

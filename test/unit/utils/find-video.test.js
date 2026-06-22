@@ -25,7 +25,9 @@ describe("helperFindVideoId", () => {
       message: "Invalid Video Id",
     });
 
-    await expect(helperFindVideoId(new Video()._id.toString())).rejects.toMatchObject({
+    await expect(
+      helperFindVideoId(new Video()._id.toString())
+    ).rejects.toMatchObject({
       statusCode: 400,
       message: "No video Exists",
     });

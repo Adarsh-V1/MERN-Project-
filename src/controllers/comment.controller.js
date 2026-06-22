@@ -4,17 +4,28 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Comment } from "../models/comment.model.js";
 import { logger } from "../utils/logger.js";
 import { Video } from "../models/video.model.js";
+import { getCachedJson, setCachedJson } from "../services/cache.service.js";
+import { cacheKeys, cacheTtlSeconds } from "../utils/cacheKeys.js";
+import {
+  invalidateChannelCaches,
+  invalidateCommentCaches,
+} from "../utils/cacheInvalidation.js";
 
 const getVideoComments = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const { page = 1, limit = 10 } = req.query;
+  const cacheKey = cacheKeys.videoComments(videoId, { page, limit });
+  const cachedResponse = await getCachedJson(cacheKey);
+
+  if (cachedResponse) {
+    return res.status(200).json(cachedResponse);
+  }
+
   const pageNum = Number(page);
   const limitNum = Number(limit);
 
-  const allComments = await Comment.find({ video: videoId }).populate(
-    "owner",
-    "-password -refreshToken"
-  )
+  const allComments = await Comment.find({ video: videoId })
+    .populate("owner", "-password -refreshToken")
     .skip((pageNum - 1) * limitNum)
     .limit(limitNum);
 
@@ -26,11 +37,15 @@ const getVideoComments = asyncHandler(async (req, res) => {
     throw new ApiError("Can't fetch comments");
   }
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, allComments, "All comments Fetched Successfully!")
-    );
+  const response = new ApiResponse(
+    200,
+    allComments,
+    "All comments Fetched Successfully!"
+  );
+
+  await setCachedJson(cacheKey, response, cacheTtlSeconds.videoComments);
+
+  return res.status(200).json(response);
 });
 
 const addComment = asyncHandler(async (req, res) => {
@@ -40,8 +55,8 @@ const addComment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "No comment was Provided");
   }
 
-  const videoExists = await Video.exists({ _id: videoId });
-  if (!videoExists) {
+  const video = await Video.findById(videoId).select("owner");
+  if (!video) {
     throw new ApiError(404, "No Video was Found");
   }
 
@@ -59,6 +74,9 @@ const addComment = asyncHandler(async (req, res) => {
     videoId,
     ownerId: req.user._id.toString(),
   });
+
+  await invalidateCommentCaches(videoId);
+  await invalidateChannelCaches(video.owner.toString());
 
   return res
     .status(200)
@@ -95,11 +113,16 @@ const updateComment = asyncHandler(async (req, res) => {
   if (!updatedComment) {
     throw new ApiError(500, "Comment wasn't updated ");
   }
+
+  const commentVideo = await Video.findById(comment.video).select("owner");
+  await invalidateCommentCaches(comment.video.toString());
+  await invalidateChannelCaches(commentVideo?.owner?.toString());
+
   return res
-  .status(200)
-  .json(
-   new ApiResponse(200,updatedComment,"Comment updated successfully!!")
-  )
+    .status(200)
+    .json(
+      new ApiResponse(200, updatedComment, "Comment updated successfully!!")
+    );
 });
 
 const deleteComment = asyncHandler(async (req, res) => {
@@ -113,7 +136,10 @@ const deleteComment = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You can only delete your own comments");
   }
 
+  const commentVideo = await Video.findById(comment.video).select("owner");
   await Comment.findByIdAndDelete(commentId);
+  await invalidateCommentCaches(comment.video.toString());
+  await invalidateChannelCaches(commentVideo?.owner?.toString());
 
   return res
     .status(200)

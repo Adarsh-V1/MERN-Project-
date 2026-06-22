@@ -4,7 +4,11 @@ import request from "supertest";
 import app from "../../../src/app.js";
 import { HotTake } from "../../../src/models/hotTake.model.js";
 import { useTestDatabase } from "../../helpers/database.js";
-import { authHeader, createHotTake, createUser } from "../../helpers/factories.js";
+import {
+  authHeader,
+  createHotTake,
+  createUser,
+} from "../../helpers/factories.js";
 
 useTestDatabase();
 

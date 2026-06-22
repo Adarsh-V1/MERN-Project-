@@ -12,11 +12,19 @@ import { uploadOnCloudinary } from "../../../src/utils/cloudinary.js";
 import { User } from "../../../src/models/user.model.js";
 import { Video } from "../../../src/models/video.model.js";
 import { useTestDatabase } from "../../helpers/database.js";
-import { authHeader, createUser, createVideo } from "../../helpers/factories.js";
+import {
+  authHeader,
+  createUser,
+  createVideo,
+} from "../../helpers/factories.js";
 
 useTestDatabase();
 
-const uploadNames = ["test-video.mp4", "test-thumbnail.jpg", "updated-thumbnail.jpg"];
+const uploadNames = [
+  "test-video.mp4",
+  "test-thumbnail.jpg",
+  "updated-thumbnail.jpg",
+];
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -111,7 +119,9 @@ describe("video APIs", () => {
     const storedViewer = await User.findById(viewer._id);
     expect(storedVideo.views).toBe(1);
     expect(storedVideo.viewedBy.map(String)).toContain(viewer._id.toString());
-    expect(storedViewer.watchHistory.map(String)).toContain(video._id.toString());
+    expect(storedViewer.watchHistory.map(String)).toContain(
+      video._id.toString()
+    );
   });
 
   it("lets an owner update a video", async () => {

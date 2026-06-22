@@ -46,7 +46,10 @@ describe("subscription APIs", () => {
   it("lists channel subscribers without exposing secrets", async () => {
     const subscriber = await createUser();
     const channel = await createUser();
-    await Subscription.create({ subscriber: subscriber._id, channel: channel._id });
+    await Subscription.create({
+      subscriber: subscriber._id,
+      channel: channel._id,
+    });
 
     const response = await request(app)
       .get(`/api/v1/subscriptions/c/${channel._id}`)
@@ -60,7 +63,10 @@ describe("subscription APIs", () => {
   it("lists channels followed by a subscriber", async () => {
     const subscriber = await createUser();
     const channel = await createUser();
-    await Subscription.create({ subscriber: subscriber._id, channel: channel._id });
+    await Subscription.create({
+      subscriber: subscriber._id,
+      channel: channel._id,
+    });
 
     const response = await request(app)
       .get(`/api/v1/subscriptions/u/${subscriber._id}`)

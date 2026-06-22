@@ -4,6 +4,10 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Like } from "../models/like.model.js";
 import { Video } from "../models/video.model.js";
 import { Comment } from "../models/comment.model.js";
+import {
+  invalidateCommentCaches,
+  invalidateVideoOwnerCaches,
+} from "../utils/cacheInvalidation.js";
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -31,6 +35,10 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     if (!updatedVideo) {
       throw new ApiError(500, "can't like the video");
     }
+    await invalidateVideoOwnerCaches({
+      ownerId: updatedVideo.owner.toString(),
+      videoId,
+    });
     return res
       .status(200)
       .json(new ApiResponse(200, updatedVideo, "Video Liked Successfully!!"));
@@ -46,10 +54,14 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     { $inc: { likesCount: -1 } },
     { new: true }
   );
+  await invalidateVideoOwnerCaches({
+    ownerId: updatedVideo.owner.toString(),
+    videoId,
+  });
 
   return res
     .status(200)
-    .json(new ApiResponse(200,  updatedVideo, "Like Removed Successfully!"));
+    .json(new ApiResponse(200, updatedVideo, "Like Removed Successfully!"));
 });
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
@@ -62,6 +74,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     comment: commentId,
     likedBy: req.user._id,
   });
+  const comment = await Comment.findById(commentId).select("video");
 
   let updatedComment;
 
@@ -78,9 +91,12 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     if (!updatedComment) {
       throw new ApiError(500, "can't like the comment");
     }
+    await invalidateCommentCaches(comment.video.toString());
     return res
       .status(200)
-      .json(new ApiResponse(200, updatedComment, "Comment Liked Successfully!!"));
+      .json(
+        new ApiResponse(200, updatedComment, "Comment Liked Successfully!!")
+      );
   }
 
   await Like.findOneAndDelete({
@@ -93,6 +109,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     { $inc: { likesCount: -1 } },
     { new: true }
   );
+  await invalidateCommentCaches(comment.video.toString());
 
   return res
     .status(200)

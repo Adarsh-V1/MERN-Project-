@@ -1,1 +1,1 @@
-export const DB_NAME = "streamverse"
+export const DB_NAME = "streamverse";

@@ -6,17 +6,22 @@ import { Playlist } from "../models/playlist.model.js";
 import { HotTake } from "../models/hotTake.model.js";
 import { Subscription } from "../models/subscription.model.js";
 import { Comment } from "../models/comment.model.js";
+import { getCachedJson, setCachedJson } from "../services/cache.service.js";
+import { cacheKeys, cacheTtlSeconds } from "../utils/cacheKeys.js";
 
 const getChannelStats = asyncHandler(async (req, res) => {
   const userId = req.user._id;
+  const cacheKey = cacheKeys.channelStats(userId.toString());
+  const cachedResponse = await getCachedJson(cacheKey);
+
+  if (cachedResponse) {
+    return res.status(200).json(cachedResponse);
+  }
 
   const videos = await Video.find({ owner: userId });
   const totalVideos = videos.length;
   const totalViews = videos.reduce((sum, v) => sum + (v.views || 0), 0);
-  const totalLikes = videos.reduce(
-    (sum, v) => sum + (v.likesCount || 0),
-    0
-  );
+  const totalLikes = videos.reduce((sum, v) => sum + (v.likesCount || 0), 0);
   const totalComments = await Comment.countDocuments({
     video: { $in: videos.map((video) => video._id) },
   });
@@ -30,66 +35,74 @@ const getChannelStats = asyncHandler(async (req, res) => {
   const subscriptions = await Subscription.find({ channel: userId });
   const totalSubscribers = subscriptions.length;
 
-
   const mostViewedVideo = videos.reduce(
     (max, v) => (v.views > (max?.views || 0) ? v : max),
     null
   );
 
   const mostLikedVideo = videos.reduce(
-    (max, v) =>
-      (v.likesCount || 0) > (max?.likesCount || 0) ? v : max,
+    (max, v) => ((v.likesCount || 0) > (max?.likesCount || 0) ? v : max),
     null
   );
-
 
   const avgViews = totalVideos ? totalViews / totalVideos : 0;
 
   const avgLikes = totalVideos ? totalLikes / totalVideos : 0;
 
-
-
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        totalVideos,
-        totalViews,
-        totalLikes,
-        totalComments,
-        totalSubscribers,
-        totalPlaylists,
-        totalHotTakes,
-        mostViewedVideo,
-        mostLikedVideo,
-        avgViews,
-        avgLikes,
-      },
-      "Channel stats fetched successfully"
-    )
+  const response = new ApiResponse(
+    200,
+    {
+      totalVideos,
+      totalViews,
+      totalLikes,
+      totalComments,
+      totalSubscribers,
+      totalPlaylists,
+      totalHotTakes,
+      mostViewedVideo,
+      mostLikedVideo,
+      avgViews,
+      avgLikes,
+    },
+    "Channel stats fetched successfully"
   );
+
+  await setCachedJson(cacheKey, response, cacheTtlSeconds.channelStats);
+
+  return res.status(200).json(response);
 });
 
 const getChannelVideos = asyncHandler(async (req, res) => {
+  const cacheKey = cacheKeys.channelVideos(req.user._id.toString());
+  const cachedResponse = await getCachedJson(cacheKey);
+
+  if (cachedResponse) {
+    return res.status(200).json(cachedResponse);
+  }
+
   const userVideos = await Video.find({ owner: req.user._id }).populate(
     "owner",
     "-password -refreshToken"
   );
   if (userVideos.length === 0) {
-    return res
-      .status(200)
-      .json(new ApiResponse(200, [], "This channel has no Videos"));
+    const emptyResponse = new ApiResponse(
+      200,
+      [],
+      "This channel has no Videos"
+    );
+    await setCachedJson(cacheKey, emptyResponse, cacheTtlSeconds.channelVideos);
+    return res.status(200).json(emptyResponse);
   }
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        userVideos,
-        "All Videos of Channel Fetchec Successfully "
-      )
-    );
+  const response = new ApiResponse(
+    200,
+    userVideos,
+    "All Videos of Channel Fetchec Successfully "
+  );
+
+  await setCachedJson(cacheKey, response, cacheTtlSeconds.channelVideos);
+
+  return res.status(200).json(response);
 });
 
 const getChannelTakes = asyncHandler(async (req, res) => {

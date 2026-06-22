@@ -11,7 +11,7 @@ const createTakes = asyncHandler(async (req, res) => {
   const hotTake = await HotTake.create({
     content,
     owner: req.user._id,
-  })
+  });
 
   if (!hotTake) {
     throw new ApiError(500, "HotTake wasn't created!");
@@ -32,7 +32,9 @@ const getAllTakes = asyncHandler(async (req, res) => {
   }
   return res
     .status(200)
-    .json(new ApiResponse(200, allHotTakes, "All HotTakes fetched successfully"));
+    .json(
+      new ApiResponse(200, allHotTakes, "All HotTakes fetched successfully")
+    );
 });
 
 const getUserTakes = asyncHandler(async (req, res) => {
@@ -132,7 +134,6 @@ const rateMidTake = asyncHandler(async (req, res) => {
     throw new ApiError(400, "No HotTake was found!");
   }
 
-
   hotTake.cap = hotTake.cap.filter((id) => id.toString() !== userId.toString());
   hotTake.mid = hotTake.mid.filter((id) => id.toString() !== userId.toString());
   hotTake.facts = hotTake.facts.filter(
@@ -141,10 +142,8 @@ const rateMidTake = asyncHandler(async (req, res) => {
 
   hotTake.mid.push(userId);
 
-
   await hotTake.save();
 
- 
   return res
     .status(200)
     .json(new ApiResponse(200, hotTake, "Rated as Mid successfully!"));
@@ -158,13 +157,11 @@ const rateFactsTake = asyncHandler(async (req, res) => {
     throw new ApiError(400, "No HotTake was found!");
   }
 
- 
   hotTake.cap = hotTake.cap.filter((id) => id.toString() !== userId.toString());
   hotTake.mid = hotTake.mid.filter((id) => id.toString() !== userId.toString());
   hotTake.facts = hotTake.facts.filter(
     (id) => id.toString() !== userId.toString()
   );
-
 
   hotTake.facts.push(userId);
 
@@ -182,5 +179,5 @@ export {
   rateCapTake,
   rateFactsTake,
   rateMidTake,
-  getAllTakes
+  getAllTakes,
 };

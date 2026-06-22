@@ -2,10 +2,8 @@
 
     - I'm using Mern Stack to build this project
     - I'm also keeping the record of every step I take in this project in readme file (it's like journal)
-    
-> Project Detials -> (StreamVerse) bassically building a kind of youtube backend that will mostly include every feature of youtube i mean not every but almost the main one's , also will try to add some of my touch, with a new features of hot takes where user bassically will share their extreme opinions or hot takes about literally anything and other users will just rate them . Goal is to build a MERN stack project on my own and understand backend and how it is handled like uplaoding videos , authentications , tokens , cookies , encryptions , multer, cludinary, handling errors and responses , interacting with database (mongoDb in this case), wirting database models, handling request and responses with Express, also can't forget javascript(node js) , writing controllers , handling routes , bug fixing ( that would be a lot ) , well let's goo
 
-    
+> Project Detials -> (StreamVerse) bassically building a kind of youtube backend that will mostly include every feature of youtube i mean not every but almost the main one's , also will try to add some of my touch, with a new features of hot takes where user bassically will share their extreme opinions or hot takes about literally anything and other users will just rate them . Goal is to build a MERN stack project on my own and understand backend and how it is handled like uplaoding videos , authentications , tokens , cookies , encryptions , multer, cludinary, handling errors and responses , interacting with database (mongoDb in this case), wirting database models, handling request and responses with Express, also can't forget javascript(node js) , writing controllers , handling routes , bug fixing ( that would be a lot ) , well let's goo
 
 --- setting up the project ---
 
@@ -39,7 +37,6 @@ First we have Model link
     - prettier is a code formatter that helps keep your code clean and consistent
     - create a .prettierrc file in the root of your project
     - create a .prettierignore file in the root of your project
-
 
 --- setting up the dataBase ---
 
@@ -104,7 +101,6 @@ First we have Model link
     - git add .
     - git commit -m "setting up the database"
     - git push origin main
-
 
 --- Custom Api Responses and error handling ---
 
@@ -177,7 +173,6 @@ First we have Model link
 
 pushing the changes to github - git add . - git commit -m "Custom Api Responses and error handling" - git push origin main
 
-
 --- Setting up the User and video Model with Hooks and JWT ---
 
 # creating user and video model
@@ -247,7 +242,6 @@ JWT token is consists of three parts 1. Header - contains the type of token and 
     - git commit -m "Setting up the User and video Model with Hooks and JWT"
     - git push origin main
 
-
 --- How to uplaod files with the help of multer and cloudinary ---
 
 # Setting up Cloudinary account
@@ -312,7 +306,6 @@ JWT token is consists of three parts 1. Header - contains the type of token and 
     - git commit -m "Created a multer middleware for handling file uploads"
     - git push origin main
 
-
 -HTTP Headers, CORS, Security, and HTTP Methods
 
 # created an http.md file
@@ -324,7 +317,6 @@ JWT token is consists of three parts 1. Header - contains the type of token and 
     - git add .
     - git commit -m "Created an http.md file for HTTP headers, CORS, security, and HTTP methods"
     - git push origin main
-
 
 --- Setting up router and controllers ---
 
@@ -359,7 +351,6 @@ JWT token is consists of three parts 1. Header - contains the type of token and 
     - git commit -m "Setting up user routes and controllers"
     - git push origin main
 
-
 --- Logic building of register Controller ---
 
 ## Writing RegisterUser function
@@ -389,7 +380,6 @@ JWT token is consists of three parts 1. Header - contains the type of token and 
     - git add .
     - git commit -m "Writing RegisterUser Controller function"
     - git push origin main
-
 
 --- Testing the user model with Postman ---
 
@@ -430,7 +420,6 @@ JWT token is consists of three parts 1. Header - contains the type of token and 
     - git commit -m "Debugging and testing with Postman "
     - git push origin main
 
-
 --- Access and Refresh Token , Middleware and cookies ---
 
 ## Access Token
@@ -452,32 +441,32 @@ JWT token is consists of three parts 1. Header - contains the type of token and 
 
     Flow: Login → get both tokens → use access token normally → when expired, send refresh token → server verifies → issues new access token.
 
-
 ## creating the userLogin function in user.controller.js
-        - req body -> get data 
-        - email based 
-        - find the user if he is in data base or not 
-        - if user exist ? check the password 
+
+        - req body -> get data
+        - email based
+        - find the user if he is in data base or not
+        - if user exist ? check the password
         - if password correct ? generate access and refresh token ( in seperate function )
         - and send them to user via cookie (secure cookie)
 
 ## created a logutUser route in user.route.js
 
 ## also creating auth.middleware.js
-    - which will have to verify if the user is login or not 
+
+    - which will have to verify if the user is login or not
     - adding user to req.user
 
-## injecting this verifyJWT as a middleware in logout Route 
+## injecting this verifyJWT as a middleware in logout Route
 
-## Also created a  logout function in user.controller.js
+## Also created a logout function in user.controller.js
+
     - how do i logout ?
-    - well remove cookies 
-    - also remove access and refresh tokens 
-    - the thing is how do i find the user during logout 
-    - simple solution middleware , req and res are just object 
-    so we can design our own middleware 
-
-
+    - well remove cookies
+    - also remove access and refresh tokens
+    - the thing is how do i find the user during logout
+    - simple solution middleware , req and res are just object
+    so we can design our own middleware
 
 # Pushing the changes to github
 
@@ -485,25 +474,23 @@ JWT token is consists of three parts 1. Header - contains the type of token and 
     - git commit -m "Access,Refresh Token , logout and login "
     - git push origin main
 
-
-
 --- Testing the login and logout using postman & debugging---
 
 ## created a function refreshAccessToken in user.controller
-    - which will bassically update refresh token if it is expired 
+
+    - which will bassically update refresh token if it is expired
 
 ## added a userRoute => refresh-token in user.routes.js
 
+## pushing the changes to github
 
-## pushing the changes to github 
     -git add .
     -git commit -m " endpoint for refreshing access token "
     -git push origin main
 
-
 --- Creating subscription Model and writing update controller ---
 
-## creating Subscription Model 
+## creating Subscription Model
 
 # Writing some Update functions in user.controller.js
 
@@ -517,24 +504,24 @@ JWT token is consists of three parts 1. Header - contains the type of token and 
 
 ## writing updateUserCoverImage function
 
+## pushing the changes to github
 
-## pushing the changes to github 
     -git add .
     -git commit -m " writing subscription model and update controllers "
     -git push origin main
 
-
 --- writing the subscription model ---
 
-## Subscription Schema 
-    - Two major things 
-    1. Subscribers 
-    2. Channels 
+## Subscription Schema
+
+    - Two major things
+    1. Subscribers
+    2. Channels
 
     User -> a, b, c, d, e
     channel -> ACA, BAB CAC
 
-    everytime we subscribe to a new channel a new document will be formed 
+    everytime we subscribe to a new channel a new document will be formed
 
     [
         channel -> ACA
@@ -557,75 +544,73 @@ JWT token is consists of three parts 1. Header - contains the type of token and 
                     Subcriber-> C
                 ]
 
-    - major question or challenge is to how will we find the subscribers of a particular channel 
-         we will select all those documents whoes channel = particular channel 
+    - major question or challenge is to how will we find the subscribers of a particular channel
+         we will select all those documents whoes channel = particular channel
          like in this for ACA channel we got 3 Subscribers
 
-    - another challenge to find how many channels a user has subscribed 
+    - another challenge to find how many channels a user has subscribed
         we will select subscriber = particular user
         in this subscriber = C so 3 channels
 
-## pushing the changes to github 
+## pushing the changes to github
+
     -git add .
     -git commit -m " understanding Subscription model "
     -git push origin main
 
-
-
-
 --- mongoDb Aggregation piplelines ---
 
 > note : An aggregation pipleline consists of one or more stages that process documents
-    - each stage performs an operation on the input docuements , like group documents 
-    - the docuements that are output from a stage are passed to the next stage 
-    - an aggregation pipeline can return results for groups of docuements , like retrieving average, maximum and minimum values 
 
+    - each stage performs an operation on the input docuements , like group documents
+    - the docuements that are output from a stage are passed to the next stage
+    - an aggregation pipeline can return results for groups of docuements , like retrieving average, maximum and minimum values
 
 ## writing a function getUserChannelProfile for counting the subscriber count and no of channel user subscribed to , using aggregation piplelines -> a bit advanced for me ngl
 
 ## pushing changes to github
+
     -git add .
     -git commit -m "mongoDB Aggregation piplelines"
     -git push origin main
 
-
 ---Writing sub pipelines and routes---
- 
 
 ## writing new piplelines for watchHistory
-    - writing getWatchHistory function in user.controller 
-    - also using nested pipelines cause in video model we dont' have the _id which we will get from the owner and owner refers to users so using a nested pipeline to get _id from users 
 
+    - writing getWatchHistory function in user.controller
+    - also using nested pipelines cause in video model we dont' have the _id which we will get from the owner and owner refers to users so using a nested pipeline to get _id from users
 
-## Pushing changes to github 
+## Pushing changes to github
+
     - git add .
     - git commit -m "getWatchHistory"
     - git push origin main
 
+$$
+Doing the Final testing --- of all User routes using postman (collection)
 
-$$ Doing the Final testing --- of all User routes using postman (collection)
-
-    1. register => success 
+    1. register => success
     2. login => success
     3. logout => success
     4. refreshtoken => success
     5. change-password => success
     6. currentUser => success
     7. updateAvatar => success
-    8. updateCoverImage => success  
+    8. updateCoverImage => success
     9. c/:uername => yet to test
-    10. watch-history => yet to test 
+    10. watch-history => yet to test
 
 
---- creating remaining model --- 
+--- creating remaining model ---
 
-# created new models such as 
+# created new models such as
         - comment.model.js
         - like.model.js
         - playlist.model.js
         - tweet.model.js
 
-## now rest is to make controllers and routers for these models 
+## now rest is to make controllers and routers for these models
 
 
 
@@ -636,47 +621,47 @@ Up to this point, I have:
 - connected MongoDB Atlas with robust error handling,
 - built JWT auth with access/refresh tokens and secure cookies,
 - implemented file uploads via Multer + Cloudinary,
-- built a whole user.controller file to handle almost every function, 
+- built a whole user.controller file to handle almost every function,
 - added a subscription model and used aggregation pipelines,
 - tested the major user routes with Postman.
 
 
 
-note> i have writen the template of all routers and controllers , 
+note> i have writen the template of all routers and controllers ,
 all now i have to do is write those controller functions and test it parallely too
 
 
-# pushing changes to github 
+# pushing changes to github
 
 
---- writing video controller --- 
+--- writing video controller ---
 
 ## created publish video function to upload to video , title , desc, thumbnail
-    - just tested it and encoutered some cloudinary error possibly due to my internet 
-    - but eventually success 
+    - just tested it and encoutered some cloudinary error possibly due to my internet
+    - but eventually success
 
-## creating a seperate helper function just to get the video data from id so i can use it in different functions and avoid rewriting it again and again 
+## creating a seperate helper function just to get the video data from id so i can use it in different functions and avoid rewriting it again and again
 
 
 ## created delete video function , update video details
     - delete video function will delete the video from cloudinary and also from the database
     - update video details function will update the video details in the database and also in cloudinary
 
-## toggle video pushlish 
+## toggle video pushlish
 
 ## writing get all video function
          - all query params should be optional
-         - want to search video by title and description too 
-         - small problem user query won't match the cases of title 
-         - either to lowercase everything 
+         - want to search video by title and description too
+         - small problem user query won't match the cases of title
+         - either to lowercase everything
 
          - or i can use regex to match pattern and find the videos by title or description
          - options : i for case insensitive
-         
 
-## testing this function - Success 
 
---- writing comment controller --- 
+## testing this function - Success
+
+--- writing comment controller ---
 
 ## writing comment.controller.js
     - created getAllComments function to get all comments for a video
@@ -684,7 +669,7 @@ all now i have to do is write those controller functions and test it parallely t
     - created deleteComment function to delete a comment
     - created updateComment function to update a comment
 
-    - tested them all after minor bugs like typos and all they all worked 
+    - tested them all after minor bugs like typos and all they all worked
 
 
 # pushing changes to github
@@ -698,7 +683,7 @@ so adding a new viewedBy field in video model to keep track of users who have vi
 
 # updating view logic in getVideoById in video.controller.js
 
-## success fully added view logic and tested it too 
+## success fully added view logic and tested it too
 
 # pushing changes to github
     - git add .
@@ -706,7 +691,7 @@ so adding a new viewedBy field in video model to keep track of users who have vi
     - git push origin main
 
 
---- writing tweet controller now --- 
+--- writing tweet controller now ---
         - writing tweet.controller.js
         - created createTweet function to create a new tweet
         - created getAllTweets function to get all tweets
@@ -717,7 +702,7 @@ so adding a new viewedBy field in video model to keep track of users who have vi
 # pushing changes to github
         - git add .
         - git commit -m "tweet.controller.js"
-        - git push origin main  
+        - git push origin main
 
 
 --- writing playlist.controller.js
@@ -726,23 +711,23 @@ so adding a new viewedBy field in video model to keep track of users who have vi
         - created getPlaylistById function to get a single playlist by id
         - created updatePlaylist function to update a playlist
         - created deletePlaylist function to delete a playlist
-        
-        - testing all the routes for playlist and ofcourse so many bugs but after half an hour of debugging finally worked 
+
+        - testing all the routes for playlist and ofcourse so many bugs but after half an hour of debugging finally worked
 
 # pushing changes to github
         - git add .
         - git commit -m "writing playlist.controller.js"
         - git push origin main
 
-# making like controller 
+# making like controller
         - created like.controller.js
         - created toggleLike function to like or unlike a video
         - created getLikesByVideo function to get all likes for a video
         - created getLikesByUser function to get all likes by a user
         - tested them all after minor bugs like typos and all they all worked
 
-# big change of plan changing tweet to hotTakes 
-        - adding ratings like mid , fact , cap to determine how a user feels about the hotTake 
+# big change of plan changing tweet to hotTakes
+        - adding ratings like mid , fact , cap to determine how a user feels about the hotTake
 
 # writing hotTake.controller.js
         - writing cap-take function to rate a hot take
@@ -763,7 +748,7 @@ so adding a new viewedBy field in video model to keep track of users who have vi
     - created unsubscribeFromChannel function to unsubscribe a user from a channel
     - created getSubscribers function to get all subscribers of a channel
 
-    it's was a bit confusing to understand the subscription flow but after two hours of pain finally got it working 
+    it's was a bit confusing to understand the subscription flow but after two hours of pain finally got it working
 
     testing all the subscription routes was successful after fixing some minor bugs
 
@@ -781,19 +766,20 @@ so adding a new viewedBy field in video model to keep track of users who have vi
     - created getChannelTakes function to fetch all the takes by the channel
     - create getChannelStats function to get all the stats for a channel
 
-# after some minor changes and adding few extra features in stats function and testing went successfull 
+# after some minor changes and adding few extra features in stats function and testing went successfull
 
-## this was the last controller to write 
-        - Started this project on 3rd of august today is 23 of august 
+## this was the last controller to write
+        - Started this project on 3rd of august today is 23 of august
         - 20 days of writing backend code for my project average around 5 hours per day
         - Total time spent: 100 hours ( roughly ) although mostly spent on testing and fixing bugs lol
-        - but it was fun wrote every controller on my own with some documentation refrences for mongo db calls 
-        
+        - but it was fun wrote every controller on my own with some documentation refrences for mongo db calls
+
 ## now i'll be moving on the front end part , i have choosed next js over react cause this would have so many routes and i don't want to mess with react -router when i have next js file based routing and also better seo due to ssr
 
 "SIGNING OFF"
 
 Oh Wait - i didn't hosted it yet   {https://streamversebackend.onrender.com/}
-Lemme do that and then we can move on to the front end part ... 
+Lemme do that and then we can move on to the front end part ...
 
 "SIGNING OFF AGAIN"
+$$

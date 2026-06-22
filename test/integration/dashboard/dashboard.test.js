@@ -20,7 +20,11 @@ describe("dashboard APIs", () => {
     const owner = await createUser();
     const subscriber = await createUser();
     const videoOne = await createVideo(owner, { views: 10, likesCount: 3 });
-    await createVideo(owner, { views: 20, likesCount: 5, title: "Most viewed" });
+    await createVideo(owner, {
+      views: 20,
+      likesCount: 5,
+      title: "Most viewed",
+    });
     await createComment(subscriber, videoOne);
     await createPlaylist(owner);
     await createHotTake(owner);

@@ -81,7 +81,9 @@ describe("user profile APIs", () => {
   it("returns the authenticated user's watch history", async () => {
     const user = await createUser();
     const video = await createVideo(user);
-    await User.findByIdAndUpdate(user._id, { $push: { watchHistory: video._id } });
+    await User.findByIdAndUpdate(user._id, {
+      $push: { watchHistory: video._id },
+    });
 
     const response = await request(app)
       .get("/api/v1/users/watch-history")
@@ -96,7 +98,9 @@ describe("user profile APIs", () => {
 
   it("updates the avatar through the upload pipeline", async () => {
     const user = await createUser();
-    uploadOnCloudinary.mockResolvedValue({ url: "https://cdn.example.com/avatar.png" });
+    uploadOnCloudinary.mockResolvedValue({
+      url: "https://cdn.example.com/avatar.png",
+    });
 
     const response = await request(app)
       .patch("/api/v1/users/update-avatar")
@@ -104,13 +108,17 @@ describe("user profile APIs", () => {
       .attach("avatar", Buffer.from("fake-avatar"), "test-avatar.png")
       .expect(200);
 
-    expect(response.body.data.avatar).toBe("https://cdn.example.com/avatar.png");
+    expect(response.body.data.avatar).toBe(
+      "https://cdn.example.com/avatar.png"
+    );
     expect(uploadOnCloudinary).toHaveBeenCalledOnce();
   });
 
   it("updates the cover image through the upload pipeline", async () => {
     const user = await createUser();
-    uploadOnCloudinary.mockResolvedValue({ url: "https://cdn.example.com/cover.png" });
+    uploadOnCloudinary.mockResolvedValue({
+      url: "https://cdn.example.com/cover.png",
+    });
 
     const response = await request(app)
       .patch("/api/v1/users/update-coverImage")
@@ -118,7 +126,9 @@ describe("user profile APIs", () => {
       .attach("coverImage", Buffer.from("fake-cover"), "test-cover.png")
       .expect(200);
 
-    expect(response.body.data.coverImage).toBe("https://cdn.example.com/cover.png");
+    expect(response.body.data.coverImage).toBe(
+      "https://cdn.example.com/cover.png"
+    );
   });
 
   it("requires an avatar file", async () => {

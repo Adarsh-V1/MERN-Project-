@@ -8,9 +8,7 @@ useTestDatabase();
 
 describe("GET /api/v1/users/okay", () => {
   it("returns a successful health response", async () => {
-    const response = await request(app)
-      .get("/api/v1/users/okay")
-      .expect(200);
+    const response = await request(app).get("/api/v1/users/okay").expect(200);
 
     expect(response.body).toBe("everything good in backend server");
   });

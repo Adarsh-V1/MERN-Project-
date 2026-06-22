@@ -1,58 +1,59 @@
-import express from 'express'
-import cors from 'cors'
-import cookieParser from 'cookie-parser'
-import multer from 'multer'
-import { logger } from './utils/logger.js'
-import { ApiError } from './utils/ApiError.js'
-import { ensureDatabaseConnection } from './middlewares/database.middleware.js'
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import multer from "multer";
+import { logger } from "./utils/logger.js";
+import { ApiError } from "./utils/ApiError.js";
+import { ensureDatabaseConnection } from "./middlewares/database.middleware.js";
 
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger.js";
 
-const app = express()
+const app = express();
 
-app.use(requestLogger)
+app.use(requestLogger);
 
-app.use(cors({
-   origin:process.env.CORS_ORIGIN, 
-   credentials :true,
-}))
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.use(express.json({limit:"20kb"})) 
-app.use(express.urlencoded({limit:'20kb'}))
-app.use(express.static("public"))
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+  })
+);
 
-app.use(cookieParser())
-app.use(ensureDatabaseConnection)
+app.use(express.json({ limit: "20kb" }));
+app.use(express.urlencoded({ limit: "20kb" }));
+app.use(express.static("public"));
 
+app.use(cookieParser());
+app.use(ensureDatabaseConnection);
 
+import { userRouter } from "./routes/user.routes.js";
+import { dashboardRouter } from "./routes/dashboard.routes.js";
+import { videoRouter } from "./routes/video.routes.js";
+import { playlistRouter } from "./routes/playlist.routes.js";
+import { likeRouter } from "./routes/like.routes.js";
+import { commentRouter } from "./routes/comment.routes.js";
+import { subscriptionRouter } from "./routes/subscription.routes.js";
+import { hotTakeRouter } from "./routes/hotTake.routes.js";
+import { requestLogger } from "./middlewares/logger.middleware.js";
 
-import { userRouter } from './routes/user.routes.js'
-import { dashboardRouter } from './routes/dashboard.routes.js'
-import { videoRouter } from './routes/video.routes.js'
-import { playlistRouter } from './routes/playlist.routes.js'
-import { likeRouter } from './routes/like.routes.js'
-import { commentRouter } from './routes/comment.routes.js'
-import { subscriptionRouter } from './routes/subscription.routes.js'
-import { hotTakeRouter } from './routes/hotTake.routes.js'
-import { requestLogger } from './middlewares/logger.middleware.js'
+app.use("/api/v1/users", userRouter);
 
-   
+app.use("/api/v1/takes", hotTakeRouter);
 
+app.use("/api/v1/subscriptions", subscriptionRouter);
 
-app.use("/api/v1/users",userRouter)
+app.use("/api/v1/videos", videoRouter);
 
-app.use("/api/v1/takes",hotTakeRouter)
+app.use("/api/v1/comments", commentRouter);
 
-app.use("/api/v1/subscriptions",subscriptionRouter)
+app.use("/api/v1/likes", likeRouter);
 
-app.use("/api/v1/videos",videoRouter)
+app.use("/api/v1/playlist", playlistRouter);
 
-app.use("/api/v1/comments",commentRouter)
-
-app.use("/api/v1/likes",likeRouter)
-
-app.use("/api/v1/playlist",playlistRouter)
-
-app.use("/api/v1/dashboard",dashboardRouter)
+app.use("/api/v1/dashboard", dashboardRouter);
 
 app.use((req, res, next) => {
   next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`));
@@ -95,11 +96,8 @@ app.use((err, req, res, next) => {
     success: false,
     message,
     errors: err.errors || [],
-    stack:
-      process.env.NODE_ENV === "development"
-        ? err.stack
-        : undefined,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
   });
 });
 
-export default app
+export default app;

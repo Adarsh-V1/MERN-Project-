@@ -6,74 +6,97 @@ import { helperFindVideoId } from "../utils/FindVideoById.js";
 import { Video } from "../models/video.model.js";
 import { User } from "../models/user.model.js";
 import { logger } from "../utils/logger.js";
-
-
-
+import { getCachedJson, setCachedJson } from "../services/cache.service.js";
+import { cacheKeys, cacheTtlSeconds } from "../utils/cacheKeys.js";
+import { invalidateVideoOwnerCaches } from "../utils/cacheInvalidation.js";
 
 const getAllVideosOfUser = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, query, sortBy = "createdAt", sortType = "desc", userId } = req.query;
-  
-  let filter = {owner:userId || req.user._id};
+  const {
+    page = 1,
+    limit = 10,
+    query,
+    sortBy = "createdAt",
+    sortType = "desc",
+    userId,
+  } = req.query;
 
-  const pageNum = Number(page)
-  const limitNum = Number(limit)
-  
-  if(query){
+  let filter = { owner: userId || req.user._id };
+
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
+
+  if (query) {
     filter.$or = [
-      {title : {$regex:query,  $options:"i"}},
-      {description: {$regex:query, $options:"i"}}
-    ]
+      { title: { $regex: query, $options: "i" } },
+      { description: { $regex: query, $options: "i" } },
+    ];
   }
 
   const allVideos = await Video.find(filter)
-  .skip((pageNum-1) * limitNum)
-  .limit(limitNum)
-  .sort({[sortBy]: sortType === "desc"? -1:1})
+    .skip((pageNum - 1) * limitNum)
+    .limit(limitNum)
+    .sort({ [sortBy]: sortType === "desc" ? -1 : 1 });
 
-  if(!allVideos || allVideos.length === 0){
+  if (!allVideos || allVideos.length === 0) {
     throw new ApiError(404, "No Videos Found");
   }
 
   return res
-  .status(200)
-  .json(
-    new ApiResponse(200, allVideos, "Videos fetched successfully!")
-  )
-  
+    .status(200)
+    .json(new ApiResponse(200, allVideos, "Videos fetched successfully!"));
 });
 
 const showAllVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, query, sortBy = "createdAt", sortType = "desc"} = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    query,
+    sortBy = "createdAt",
+    sortType = "desc",
+  } = req.query;
 
-  let filter = {}
-  const pageNum = Number(page)
-  const limitNum = Number(limit)
-  
-  if(query){
-    filter.$or = [
-      {title : {$regex:query,  $options:"i"}},
-      {description: {$regex:query, $options:"i"}}
-    ]
+  const cacheKey = cacheKeys.publicVideoList({
+    page,
+    limit,
+    query,
+    sortBy,
+    sortType,
+  });
+  const cachedResponse = await getCachedJson(cacheKey);
+
+  if (cachedResponse) {
+    return res.status(200).json(cachedResponse);
   }
 
-  const allVideos = await Video.find(filter).populate(
-    "owner",
-    "-password -refreshToken"
-  )
-  .skip((pageNum-1) * limitNum)
-  .limit(limitNum)
-  .sort({[sortBy]: sortType === "desc"? -1:1})
+  let filter = {};
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
 
-  if(!allVideos || allVideos.length === 0){
+  if (query) {
+    filter.$or = [
+      { title: { $regex: query, $options: "i" } },
+      { description: { $regex: query, $options: "i" } },
+    ];
+  }
+
+  const allVideos = await Video.find(filter)
+    .populate("owner", "-password -refreshToken")
+    .skip((pageNum - 1) * limitNum)
+    .limit(limitNum)
+    .sort({ [sortBy]: sortType === "desc" ? -1 : 1 });
+
+  if (!allVideos || allVideos.length === 0) {
     throw new ApiError(404, "No Videos Found");
   }
 
-  return res
-  .status(200)
-  .json(
-    new ApiResponse(200, allVideos, "Videos fetched successfully!")
-  )
-  
+  const response = new ApiResponse(
+    200,
+    allVideos,
+    "Videos fetched successfully!"
+  );
+  await setCachedJson(cacheKey, response, cacheTtlSeconds.publicVideoList);
+
+  return res.status(200).json(response);
 });
 
 const publishVideo = asyncHandler(async (req, res) => {
@@ -117,27 +140,34 @@ const publishVideo = asyncHandler(async (req, res) => {
     ownerId: req.user._id.toString(),
   });
 
+  await invalidateVideoOwnerCaches({
+    ownerId: req.user._id.toString(),
+  });
+
   return res
     .status(200)
     .json(new ApiResponse(200, createdVideo, "Video Uploaded SuccessFully !"));
 });
 
-
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const video = await helperFindVideoId(videoId);
 
-  if(!video.viewedBy.includes(req.user._id)){
-    video.views  += 1
-    video.viewedBy.push(req.user._id)
-    await video.save()
+  if (!video.viewedBy.includes(req.user._id)) {
+    video.views += 1;
+    video.viewedBy.push(req.user._id);
+    await video.save();
 
-  
     await User.findByIdAndUpdate(
       req.user._id,
       { $addToSet: { watchHistory: videoId } },
       { new: true }
     );
+
+    await invalidateVideoOwnerCaches({
+      ownerId: video.owner._id.toString(),
+      videoId,
+    });
   }
 
   return res
@@ -148,19 +178,19 @@ const getVideoById = asyncHandler(async (req, res) => {
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
-  const video = await helperFindVideoId(videoId)
+  const video = await helperFindVideoId(videoId);
 
   if (video.owner._id.toString() !== req.user._id.toString()) {
     throw new ApiError(403, "You can only update your own videos");
   }
 
   const { newTitle, newDescription } = req.body;
-  
+
   if (!newTitle || !newDescription) {
     throw new ApiError(400, "new title and Description not received!");
   }
 
-  const thumbnailLocalPath =  req.file?.path;
+  const thumbnailLocalPath = req.file?.path;
 
   if (!thumbnailLocalPath) {
     throw new ApiError(404, "thumbnail not Received!");
@@ -176,7 +206,7 @@ const updateVideo = asyncHandler(async (req, res) => {
       $set: {
         title: newTitle,
         description: newDescription,
-        thumbnail: newThumbnail.url
+        thumbnail: newThumbnail.url,
       },
     },
     {
@@ -192,9 +222,16 @@ const updateVideo = asyncHandler(async (req, res) => {
     ownerId: req.user._id.toString(),
   });
 
+  await invalidateVideoOwnerCaches({
+    ownerId: req.user._id.toString(),
+    videoId,
+  });
+
   return res
     .status(200)
-    .json(new ApiResponse(200,videoUpdated, "Video Details updated Successfully"));
+    .json(
+      new ApiResponse(200, videoUpdated, "Video Details updated Successfully")
+    );
 });
 
 const deleteVideo = asyncHandler(async (req, res) => {
@@ -206,13 +243,15 @@ const deleteVideo = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You can only delete your own videos");
   }
 
-  await video.deleteOne()
-  
+  await video.deleteOne();
+  await invalidateVideoOwnerCaches({
+    ownerId: req.user._id.toString(),
+    videoId,
+  });
+
   return res
-  .status(200)
-  .json(
-    new ApiResponse(200,{},"Video deleted Successfully")
-  )
+    .status(200)
+    .json(new ApiResponse(200, {}, "Video deleted Successfully"));
 });
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
@@ -227,17 +266,19 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 
   await video.updateOne(
     {
-      $set:{ isPublished: newStatus}
+      $set: { isPublished: newStatus },
     },
-    {new:true}
-  )
+    { new: true }
+  );
 
-  return res 
-  .status(200)
-  .json(
-    new ApiResponse(200,newStatus, `isPublished is set ${newStatus} `)
-  )
+  await invalidateVideoOwnerCaches({
+    ownerId: req.user._id.toString(),
+    videoId,
+  });
 
+  return res
+    .status(200)
+    .json(new ApiResponse(200, newStatus, `isPublished is set ${newStatus} `));
 });
 
 export {
