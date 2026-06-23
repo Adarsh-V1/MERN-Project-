@@ -4,13 +4,14 @@ import { logger } from "../utils/logger.js";
 let redisClient;
 let redisConnectionPromise;
 let listenersRegistered = false;
+const REDIS_ENABLED = false;
 
 function getRedisUrl() {
   return process.env.REDIS_URL?.trim() || "";
 }
 
 function isRedisConfigured() {
-  return Boolean(getRedisUrl());
+  return REDIS_ENABLED && Boolean(getRedisUrl());
 }
 
 function getRedisClient() {
